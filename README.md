@@ -1,4 +1,4 @@
-.large[HOMEWORK 1]
+**HOMEWORK 1**
 The purpose of this first homework is to get acquainted with Spark and with its use to implement MapReduce algorithms.
 In preparation for the homework, perform the following preliminary steps:
 
