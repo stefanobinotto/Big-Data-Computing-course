@@ -1,0 +1,143 @@
+
+<!-- saved from url=(0052)http://www.dei.unipd.it/~capri/BDC/MachineSetup.html -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>
+  Big Data Computing: Machine Setup
+ </title>
+</head>
+<body bgcolor="#FFFFFF" background="./Big Data Computing_ Machine Setup_files/bg524.jpg">
+<center>
+
+<hr size="3" noshade="" width="800" align="center" color="#004080">
+<table width="800">
+<tbody><tr> <td align="center">
+<font size="5" color="#000066"> <b> Machine Setup</b>  </font> <p>
+</p></td></tr><tr> <td align="left">
+<font size="4">
+Before doing any work, you should setup your machine. First of all,
+<b>you need to have the Java Development Kit (JDK) version 8 installed on
+your machine</b>. If you do not, head
+to <a class="reference external" href="http://www.oracle.com/technetwork/java/javase/downloads/index.html">Oracle download page</a> and download the Java Development Kit version 8.
+Version 9 (or leter versions) might give problems, so we should avoid them for the time being.
+
+<h3>Instructions for Java users</h3>
+<ol>
+<li>
+Create a directory <b> BDC </b> on your computer which will
+be the main directory for your homeworks. In this directory, 
+put the file <b> build.gradle </b> which you must
+<a href="http://www.dei.unipd.it/~capri/BDC/CODE/build.gradle">download here</a>.
+</li><li>
+<font color="CC0000">If you are working in the Virtual Machine you can
+skip this step, as the software is already installed.</font>
+Install <b>Intellij Idea (Community edition), version 2020</b> on your system 
+from this <a href="https://www.jetbrains.com/idea/download/other.html">download page</a>.
+<!-- The installation may suggest to download JDK together -->
+<!-- with Intellij, however it is better to install JDK separately -->
+<!-- so to make sure that version 8 is installed. --> 
+In the Installation Options dialog window, select 32-bit or
+64-bit launcher, depending on your machine, and specify Java in the
+Create Associations section.  (For a more comprehensive guide you can
+look at the
+<a href="https://www.jetbrains.com/help/idea/install-and-set-up-intellij-idea.html">official install and set-up page</a>.)
+</li><li>
+After installation is completed, you must 
+configure Intellij  for a first run.
+Launch Intellij. In the first startup screen choose not to import any settings.
+In the second one (about user interface theme)  choose 
+"Skip Remaining and Set Defaults". Then, in the third screen
+select <b>Open</b> and 
+use the file selection dialog that pops up to select the 
+<b>build.gradle</b> 
+file contained in the directory you
+created in Step 1, as shown in the following screenshot. 
+<p>
+<img alt="_images/screen1.png" src="./Big Data Computing_ Machine Setup_files/screen1.png" width="70%">
+</p><p>
+When prompted, you should click <b>Open as project</b>.
+
+<!-- The following screen should pop up -->
+<!-- <p> -->
+<!-- <img alt="_images/screen1.png" src="_images/screen1.png" width=70% /> -->
+<!-- <p> -->
+<!-- Make sure that the boxes are checked as in the image. --> 
+You will have to wait a couple of minutes until Intellij configures itself.
+</p></li><li>
+Create a directory <b>BDC/src/main/java</b>.
+<em>As a default, put all of your programs in </em>
+<b>BDC/src/main/java</b>, <em>and all datasets that you want to provide
+as inputs to your programs, in
+the root directory</em> <b>BDC</b>.
+</li><li>
+Use the project navigation panel on the left to open the files (e.g., programs,
+datasets, etc.). Open a java program as in the following screenshot
+<p>
+<img alt="_images/screen2.png" src="./Big Data Computing_ Machine Setup_files/screen2.png" width="70%">
+</p><p>
+If the editor shows errors (in red), 
+this means that there is no Development Kit associated to the project.
+To fix this problem,
+</p><ul>
+<li>
+Open the menu <b>File/Project Structure</b> and select
+<b>Project</b> from the left panel. 
+A window like the following one will pop up.<p></p>
+<img alt="_images/screen3.png" src="./Big Data Computing_ Machine Setup_files/screen3.png" width="70%/">
+</li><li>
+Open the drop-down menu and select the appropriate JDK, as in 
+the figure above. If in doubt,
+pick Java 8.
+<!-- Click the <b>New</b> button and select --> 
+<!-- <b>JDK</b>. In the file selection dialog that shows up --> 
+<!-- select the JDK directory. This is the directory containing --> 
+<!-- the <b>lib</b> and <b>bin</b> folders that include Java executables and libraries. Usually Intellij will suggest the right one. -->
+At this point all errors will disappear.<p></p>
+</li></ul>
+If you see no errors in the editor, then you can skip the previous steps.
+</li><li>
+On the line of the <b>main</b> method there is a green arrow, 
+which allows you to run your code.
+<p>
+<img alt="_images/screen4.png" src="./Big Data Computing_ Machine Setup_files/screen4.png" width="70%/">
+</p><p>
+Clicking the green arrow will compile the code and run it.
+The run will not succeed (exit code 1 at the bottom of the screen)
+since you must configure a set of execution
+parameters. To do so, use the drop-down menu on the top-right 
+of the Intellij window, where the name of the program (TemplateHW1,
+in the example) appears, and select <b>Edit Configurations</b> to 
+get a dialog window which you must fill as indicated in the following image
+</p><p>
+<img alt="_images/screen5.png" src="./Big Data Computing_ Machine Setup_files/screen5.png" width="70%">
+</p><p>
+Note that the <b>VM options</b> field (where the spark.master property is set) may be hidden, and must be retrieved 
+by clicking on the <b>Modify options</b> blue text.
+Specifically, <b>VM options</b> specify that you want to run Spark in 
+local mode (spark.master is a java system property), while
+<b>CLI arguments to your application</b> 
+are the arguments passed to the <b>main</b> method
+(an integer 4 and a file dataset.txt, in the example).
+</p></li></ol>
+<h4>Instructions for Python users </h4>
+<font color="CC0000">If you are working in the Virtual Machine you can
+skip this step, as the software is already installed.</font>
+<p>
+Spark also exposes a Python interface. To use Spark from Python on
+your local machine, follow
+these <a href="http://www.dei.unipd.it/~capri/BDC/PythonInstructions.html">instructions</a>, which were
+created by a colleague of yours in a previous edition of the class. 
+</p><p>
+</p></font></td></tr></tbody></table>
+<hr size="3" noshade="" width="800" align="center" color="#004080">
+<table width="800">
+<tbody><tr>
+<td align="left" width="425">
+<font size="3">Last update: 23/04/2020 </font>
+</td><td align="right" width="265">
+<font size="3"> 
+<a href="http://www.dei.unipd.it/~capri/BDC/index.htm"> Back to home page </a> </font> 
+</td></tr></tbody></table>
+</center>
+
+
+</body></html>

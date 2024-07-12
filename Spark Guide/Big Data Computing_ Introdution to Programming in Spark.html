@@ -1,0 +1,575 @@
+
+<!-- saved from url=(0056)http://www.dei.unipd.it/~capri/BDC/SparkProgramming.html -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>
+  Big Data Computing: Introdution to Programming in Spark
+ </title>
+</head>
+<body bgcolor="#FFFFFF" background="./Big Data Computing_ Introdution to Programming in Spark_files/bg524.jpg">
+<center>
+
+<hr size="3" noshade="" width="800" align="center" color="#004080">
+<table width="800">
+<tbody><tr> <td align="center">
+<font size="5" color="#000066"> <b>  Introdution to Programming in Spark</b>  </font> <p>
+</p></td></tr><tr> <td align="left">
+<font size="4">
+<h3>Functional Programming</h3>
+<p>
+<em> While most concepts explained in this section are general, the 
+syntax and the examples will be given in Java. Things in Python are
+rather similar and you can 
+<a href="https://spark.apache.org/docs/latest/rdd-programming-guide.html#passing-functions-to-spark">
+read the details here</a> (click on the Python stub.)</em> 
+</p><p>
+One of the core ideas of <b>functional programming </b> is that
+functions can be arguments to other functions.  For instance, a
+function implementing a sorting algorithm may take as a parameter the
+comparison function along with the data to be sorted.</p>
+
+<p>Java 8 introduced support for this style of programming by adding
+new syntax for specifying so-called <em>anonymous functions</em>, also
+called <em>lambdas</em>.  This syntax allows to write functions
+directly in the argument list of other functions.  The syntax for
+specifying a function is the following:</p>
+
+<pre>(T1 param1, T2, param2, ...) -&gt; {
+<span class="c1">  // Body of the function with as many statements as you need </span>
+<span class="c1">  // separated by semicolons, just like regular Java statements. </span>
+<span class="c1">  return /* possibly something */; </span>
+}
+</pre>
+<p>
+where <code class="docutils literal"><span class="pre">T1</span></code> and <code class="docutils literal"><span class="pre">T2</span></code> are the types of <code class="docutils literal"><span class="pre">param1</span></code> and <code class="docutils literal"><span class="pre">param2</span></code>, respectively.</p>
+<p>If the function is made by a single statement, a more concise syntax can be used:</p>
+<div class="highlight-java"><div class="highlight"><pre><span></span><span class="o">(</span><span class="n">T1</span> <span class="n">param1</span><span class="o">,</span> <span class="n">T2</span> <span class="n">param2</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="cm">/* single statement with no semicolon */</span>
+</pre></div>
+</div>
+<p>the result of the single statement will be the return value of the function.
+If the type of the parameters can be inferred from the context, it can be omitted.</p>
+<p>An example will make things clearer.
+Imagine you have a collection <code class="docutils literal"><span class="pre">coll</span></code> of <code class="docutils literal"><span class="pre">Double</span></code> with a method <code class="docutils literal"><span class="pre">map</span></code> (more on such collections later).
+The <code class="docutils literal"><span class="pre">map</span></code> method transforms the collection into a new one by applying the function passed as a parameter to each element.
+Therefore, to obtain a collection of the squared values you should do the following:</p>
+<div class="highlight-java"><div class="highlight"><pre><span></span><span class="n">coll</span><span class="o">.</span><span class="na">map</span><span class="o">((</span><span class="n">Double</span> <span class="n">x</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">x</span><span class="o">*</span><span class="n">x</span><span class="o">);</span>
+</pre></div>
+</div>
+<p>Since the collection is of <code class="docutils literal"><span class="pre">Double</span></code>, the compiler can infer the type of <code class="docutils literal"><span class="pre">x</span></code>, so in this case we can write:</p>
+<div class="highlight-java"><div class="highlight"><pre><span></span><span class="n">coll</span><span class="o">.</span><span class="na">map</span><span class="o">((</span><span class="n">x</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">x</span><span class="o">*</span><span class="n">x</span><span class="o">);</span>
+</pre></div>
+</div>
+<p>To make another example, imagine that you want to transform your collection of <code class="docutils literal"><span class="pre">Double</span></code> into a collection of differences from some other value, defined in a variable:</p>
+<div class="highlight-java"><div class="highlight"><pre><span></span><span class="kt">double</span> <span class="n">fixed</span> <span class="o">=</span> <span class="mf">1.5</span><span class="o">;</span>
+
+<span class="n">coll</span><span class="o">.</span><span class="na">map</span><span class="o">((</span><span class="n">x</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="o">{</span>
+  <span class="kt">double</span> <span class="n">diff</span> <span class="o">=</span> <span class="n">fixed</span> <span class="o">-</span> <span class="n">x</span><span class="o">;</span>
+  <span class="k">return</span> <span class="n">diff</span><span class="o">;</span>
+<span class="o">});</span>
+</pre></div>
+</div>
+<p>Note that <code class="docutils literal"><span class="pre">fixed</span></code> is used in the body of the anonymous function, but is defined outside of it!
+In such cases we say that the anonymous function <em>captures</em> a variable.
+You cannot re-assign a captured variable within an anonymous function.
+Trying to do it will result in a compilation error mentioning that all captured variables must be <em>effectively final</em>, which is the compiler’s way of saying that you cannot re-assign them.</p>
+<p>Java 8 also introduced another way of passing functions to other functions, namely <em>method references</em>.
+Suppose you have the following class:</p>
+<div class="highlight-java"><div class="highlight"><pre><span></span><span class="kd">public</span> <span class="kd">class</span> <span class="nc">Operations</span> <span class="o">{</span>
+
+  <span class="kd">public</span> <span class="kd">static</span> <span class="kt">double</span> <span class="nf">square</span><span class="o">(</span><span class="kt">double</span> <span class="n">x)</span> <span class="o">{</span>
+    <span class="k">return</span> <span class="n">x</span> <span class="o">*</span> <span class="n">x</span><span class="o">;</span>
+  <span class="o">}</span>
+<span class="o">}</span>
+</pre></div>
+</div>
+<p>You may pass the <em>static</em> method <code class="docutils literal"><span class="pre">square</span></code> to the method <code class="docutils literal"><span class="pre">map</span></code> instead of defining a lambda function, like in the examples above.
+The syntax to refer the static method <code class="docutils literal"><span class="pre">square</span></code> is the following:</p>
+<div class="highlight-java"><div class="highlight"><pre><span></span><span class="n">coll</span><span class="o">.</span><span class="na">map</span><span class="o">(</span><span class="n">Operations</span><span class="o">::</span><span class="n">square</span><span class="o">);</span>
+</pre></div>
+</div>
+<p>note the double colon joining the method name <code class="docutils literal"><span class="pre">square</span></code> to the class it belongs to, <code class="docutils literal"><span class="pre">Operations</span></code>.</p>
+<p>Therefore, you have two ways of passing a function to a method: either you pass an anonymous function or a method reference.
+Usually, lambda functions are used when the functionality can be coded in a few statements and is limited to a single occurrence.
+Method references, on the other hand, are useful when the code gets more complex or when it should be reused in several places.</p>
+
+<p>
+</p><h3>Mini-guide to Spark implementation of MapReduce algorithms</h3>
+Below we give a brief description of the most relevant Spark features
+and methods which can be used for the implementation of MapReduce algorithms.
+<em>The presentation refers to Java as a default, reporting  
+main differences with Python, when needed. For minor
+differences with Python (e.g., in the syntax), refer to the official
+<a href="https://spark.apache.org/docs/latest/api/python/index.html">
+Spark Python API</a></em>.
+
+<h4><b>Configuration</b></h4>
+<p>
+
+First, let us look at the basic settings required in your program to
+use Spark, which were already present in the template provided for Homework 1.
+The entry point to Spark is the Spark context.  Since Spark can
+run on your laptop as well as on many different cluster architectures,
+to simplify the user experience Spark developers have created a single
+entry point that handles all the gory details behind the scenes.  
+To create the context you first need to provide some configuration 
+using 
+</p><div class="highlight-java"><div class="highlight"><pre><span></span><span class="n">SparkConf</span> <span class="n">configuration</span> <span class="o">=</span>
+  <span class="k">new</span> <span class="n">SparkConf</span><span class="o">(</span><span class="kc">true</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">setAppName</span><span class="o">(</span><span class="s">"application name here"</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">setMaster</span><span class="o">(</span><span class="s">"master"</span><span class="o">);</span>
+</pre></div>
+</div>
+<p>
+Let’s break down the code snippet above. We pass <code>true</code> to the <code>SparkConf</code>
+constructor. This has the effect that configuration
+properties can also be passed on the command line. Alternatively, 
+they must be set invoking suitable methods
+from the <code>SparkConf</code> object being created. For example,
+the code above sets the name of the application and the master address in this fashion.  As detailed in
+the <a class="reference external" href="https://spark.apache.org/docs/latest/submitting-applications.html#master-urls">Spark
+documentation</a>, there are several values that the master address can take.
+For this course, the following two are relevant:
+</p><ul>
+<li><code>"local[*]"</code>: use the local resources of the computer. This sets up a Spark process on the local machine, using the available cores for parallelism.
+Use this setting when testing code on your local machine.
+</li><li><code>"yarn"</code>: run Spark on the Yarn cluster manager. This is the cluster manager used by the cloud computing platform available for the course. Use this setting when running on it.
+</li></ul>
+<p>
+Rather than hardcoding the setting of the master in the code, one
+could pass it on the command line 
+(e.g., using the VM options in the Intellij interface for Java users). This
+choice gives the flexibility of running the code on different
+architectures.
+</p><p>
+Based on the cofinguration object <code>conf</code> 
+created above, 
+the Spark context is instantiated as follows:
+</p><p> <code>JavaSparkContext sc = new JavaSparkContext(conf)</code>.
+</p><p>
+</p><h4><b>Reading from a file</b></h4>  
+<p>
+A way (but not the only one!) to read an input dataset 
+is to store the dataset as a text file, 
+located at some path <code>filepath</code> 
+which is passed as input to the program,
+and then load the file into an RDD of strings,
+with each string corresponding to a distinct line in the file:
+</p><div class="highlight-java"><div class="highlight"><pre>JavaRDD&lt;String&gt; lines = sc.textFile("filepath"). </pre>
+</div> </div>
+<p>
+The filepath can be substituted with args[0], if it is 
+passed as the first parameter on the command line.
+Note that if a path to a directory 
+rather than to a file is passed to <code>textFile</code>, it
+will load all files found in the directory into the RDD.
+
+</p><h4><b>Key-value pairs</b></h4>
+<p>
+In Java, a dataset of key-value pairs with
+keys of type K and values of type V
+is implemented through a <code>JavaPairRDD&lt;K,V&gt;</code> object, which is
+an RDD whose elements are instances of the class 
+<code>Tuple2&lt;K,V&gt;</code>. Given a
+pair T, instance of <code>Tuple2&lt;K,V&gt;</code>, the methods
+<code>T._1()</code> and <code>T._2()</code> return the key and the value
+of the pair, respectively. 
+</p><p>
+<font color="CC0000"> For Python users. </font> In Python, a dataset
+of key-value pairs can be implemented as a simple RDD whose elements
+are key-value pairs. 
+</p><p>
+More on RDDs of key-value pairs in Spark (both for Java and Python users) can be found 
+<a href="https://spark.apache.org/docs/latest/rdd-programming-guide.html#working-with-key-value-pairs">
+here</a>.
+
+</p><h4><b>Map phase</b></h4> <p> In order to implement a map phase
+where each key-value pair, individually, is transformed into 
+0, 1 or more key-value pairs, the following methods
+can be invoked from an instance X of <code>JavaPairRDD&lt;K,V&gt;</code>:
+</p><ul>
+<li> <code>mapToPair(f)</code>. 
+(The method can also be invoked from a <code>JavaRDD&lt;T&gt;</code> object.)
+It applies function f passed 
+as a parameter to each individual key-value pair of X, transforming it into
+a key-value pair of type <code>Tuple2&lt;K',V'&gt;</code>
+(with arbitrary K' and V'). The result is a 
+<code>JavaPairRDD&lt;K',V'&gt;</code>. Note that the method cannot be
+used to eliminate elements of X, and the returned RDD has the same number
+of elements as X. To filter out some elements from X, one can invoke 
+either the <code>filter</code> or the <code>flatMapToPair</code> methods
+described below.
+</li><li> <code>flatMapToPair(f)</code>. It applies function f passed 
+as a parameter to each individual key-value pair of X, transforming it into
+0, 1 or more key-value pairs of type <code>Tuple2&lt;K',V'&gt;</code>
+(with arbitrary K' and V'), which are returned as an iterator.
+The result is a <code>JavaPairRDD&lt;K',V'&gt;</code>.
+(The method can also be invoked from a <code>JavaRDD&lt;T&gt;</code> object.)
+</li><li> <code>mapValues(f)</code>. It transforms
+each key-value pair (k,v) in X into 
+a key-value pair (k,v'=f(v)) of type
+<code>Tuple2&lt;K,V'&gt;</code> (with arbitrary V')
+where f is the function passed as a parameter.
+The result 
+is a 
+<code>JavaPairRDD&lt;K,V'&gt;</code>.
+</li><li> <code>flatMapValues(f)</code>. It transforms each key-value pair
+(k,v) in X into multiple key-value pairs (k,w_1), (k,w_2) , ... of
+type <code>Tuple2&lt;K,V'&gt;</code> (with arbitrary V'). 
+The w_i's are returned as an <code>Iterable&lt;V'&gt;</code> 
+by f(v), where f is the function passed as a parameter.
+The result is a 
+<code>JavaPairRDD&lt;K,V'&gt;</code>.
+</li></ul> 
+<h4><b>Reduce phase</b></h4>
+<p> In order to implement a reduce phase
+where each set of key-value pairs with the same key are transformed into 
+a set of 0, 1 or more key-value pairs, the following methods
+can be invoked from a <code>JavaPairRDD&lt;K,V&gt;</code> object X:
+</p><ul>
+<li> <code>groupByKey()</code>.
+For each key k occurring in X, 
+it creates a key-value pair (k,w) 
+where w is an <code>Iterable&lt;V&gt;</code>
+containing all values of the key-value pairs with key k
+in X. 
+The result is a 
+<code>JavaPairRDD&lt;K,Iterable&lt;V&gt;&gt;</code>.
+The reduce phase of MapReduce can be implemented by
+applying 
+<code>flatMapToPair</code> after <code>groupByKey</code>.
+</li><li>
+<code>groupBy(f)</code>. It applies function f passed as a
+parameter to assign a key to each element of X. Then, for each
+assigned key k creates a key-value pair (k,w) where w is
+an <code>Iterable&lt;K,V&gt;</code> containing all elements of X that
+have been assigned key k.  The result is a
+<code>JavaPairRDD&lt;H,Iterable&lt;K,V&gt;&gt;</code>, where H is the
+domain of the keys assigned by f.  The partitions induced by f can
+then be processed individually by applying a method such
+a <code>flatMap</code> or <code>flatMapToPair</code> to the RDD
+resulting from
+<code>groupBy</code>. 
+</li><li> <code>reduceByKey(f)</code>.
+For each key k occurring in X, it creates a key-value pair (k,v) where
+v is obtained by aggregating all values of the key-value pairs with key
+k through the function f passed as a parameter. For example, if f is specified
+as (x,y)-&gt;x+y, then v will be the sum of all values of the key-value pairs with key k. The aggregation is performed efficiently exploiting the partitions of the RDD X created by Spark (perhaps as a consequence of the invocation of
+the repartition method): first the values are aggregated within each partition,
+and then across partitions. The result is a 
+<code>JavaPairRDD&lt;K,V&gt;</code>. 
+<p></p>
+</li></ul>
+<p>
+<font color="CC0000"> For Python users. </font> All of the above
+methods have a Python equivalent with the same name, except
+for <code>mapToPair</code> and <code>flatMapToPair</code> which, in
+Python, become <code>map</code> and <code>flatMap</code>.  Some
+transformations, however, require that the elements of the RDD be
+key-value pairs.
+</p><h4><b>Partitioning</b></h4>
+<p> 
+An RDD is subdivided into a configurable number of <b>partitions</b>,
+which may be distributed across many machines.  For transformations
+acting on individual elements of an RDD (e.g., those listed above to
+implement the Map phase of a MapReduce round), Spark defines a number
+of <b>tasks</b> equal to the number of partitions.  Each task
+corresponds to the application of the given transformation to the
+elements of a distinct partition. Also, in Spark each machine is
+called an <b>executor</b>, and may have many <b>cores</b>.  Each task
+will be assigned to a core for execution. A higher number of
+partitions allows for better exploitation of the available cores,
+better load balancing and smaller local space usage. However, managing
+too many partitions may eventually introduce a large overhead.
+</p><p>
+The number of partitions, say <code> num-part</code>, can be set by
+invoking the
+<code>repartition(num-part)</code> method.
+In this case, the elements of the RDD are <em>randomly shuffled</em> among the partitions
+and this is a way to attain a random partitioning. 
+</p><p>
+<font color="CC0000"> Important: </font> since RDDs are immutable,
+the number of partitions can be set only when the RDD is first defined.
+Let <code>X,Y,Z</code> be  RDD variables and 
+consider the following sequence of 3 instructions:
+</p><p>
+<code>Y = X.repartition(4)</code> <br>
+<code>Y.repartition(8)</code> <br>
+<code>Z = Y.repartition(8)</code>
+</p><p>
+After the 3 instructions have been executed, <code>Y</code> is subdivided into 4
+partitions (the second instruction has no effect on its partitioning)
+and <code>Z</code> is subdivided into 8 partitions.
+</p><p>
+The number of partitions can also be passed as input to the
+<code>textFile</code> method described above
+(e.g., 
+<code>JavaRDD&lt;String&gt; docs = sc.textFile("filepath",num-part)</code>,
+but in this latter case it is regarded as a "minimum" number of
+partitions and also the achieved patition is not necessarily random.
+</p><p>
+Let <code>X</code> be an RDD containing objects of type T, partitioned into p partitions. 
+The following methods allow you to gather
+and work separately on each partition.
+</p><ul>
+<li>
+<code>mapPartitions(f)</code>
+and <code>mapPartitionsToPair(f)</code>. They apply function f passed as a parameter 
+to the elements of each partition, which are assumed to
+be provided as an
+iterator. Function f must return 
+0, 1 or more objects of some type T'. Hence, the result is a 
+<code>JavaRDD</code> of elements of type T'.
+If <code>mapPartitionsToPair</code>
+is used, then type T' must be  
+<code>Tuple2&lt;K',V'&gt;</code> and the result is a 
+<code>JavaPairRDD&lt;K',V'&gt;</code>.
+<p>
+</p></li><li><code>glom()</code> (the name says it all :-). 
+It returns an RDD whose elements are arrays (Java) or lists (Python) 
+of objects of type T, and each such array/list 
+contains the objects of a distinct partition 
+of X. The partitions can then be processed
+individually by applying a method such a <code>flatMap</code>
+or <code>flatMapToPair</code>, with a suitable to the RDD resulting from <code>glom</code>. <p></p>
+</li></ul>
+<p>
+<font color="CC0000"> For Python users. </font> All of the above
+methods have a Python equivalent with the same name, except
+for <code>mapPartitionsToPair</code> which does not exist in the Python API.
+
+</p><h4><b>Additional useful methods</b></h4>
+The following methods can be invoked from an RDD X of elements of type T.
+<ul>
+<li><code>count()</code>. An <b>action</b> that returns the number of elements in X.
+<p>
+</p></li><li><code>map(f)</code>. A <b>transformation</b> that applies function f to each individual element X. 
+Function f accepts a single input of type T and returns an output of type R.
+The following example shows how to transform a RDD of integers into a RDD of doubles 
+by halving each element of the original collection:<p></p>
+<div class="highlight-Java"><div class="highlight"><pre><span></span><span class="n">JavaRDD</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">&gt;</span> <span class="n">numbers</span><span class="o">;</span>
+<span class="n">JavaRDD</span><span class="o">&lt;</span><span class="n">Double</span><span class="o">&gt;</span> <span class="n">halves</span> <span class="o">=</span> <span class="n">numbers</span><span class="o">.</span><span class="na">map</span><span class="o">((</span><span class="n">x</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">x</span> <span class="o">/</span> <span class="mf">2.0</span><span class="o">);</span> </pre></div>
+<p>
+</p></div></li><li><code>reduce(f)</code>. An <b>action</b> that returns
+a single value of type T by combining all the values of the RDD according to function f, which
+must be associative and commutative, since there is no guarantee on the order of application to the elements of the RDD.
+For example, to get the sum of all the elements of a RDD of integers:<p></p>
+<div class="highlight-Java"><div class="highlight"><pre><span></span><span class="n">JavaRDD</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">&gt;</span> <span class="n">numbers</span><span class="o">;</span>
+<span class="kt">int</span> <span class="n">sum</span> <span class="o">=</span> <span class="n">numbers</span><span class="o">.</span><span class="na">reduce</span><span class="o">((</span><span class="n">x</span><span class="o">,</span> <span class="n">y</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span><span class="o">);</span>
+</pre></div>
+<font color="CC0000"> Important: </font> this method should not be confused with the Reduce Phase in MapReduce. They
+are rather different things!
+<p>
+</p></div></li><li><code>filter(f)</code> A <b>transformation</b>  that returns an RDD containing only the elements 
+in X for which f returns true. Function f accepts a single input of type T and returns a boolean.
+The following example shows how to obtain a RDD of even numbers from an RDD of integers:<p></p>
+<div class="highlight-Java"><div class="highlight"><pre><span></span><span class="n">JavaRDD</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">&gt;</span> <span class="n">numbers</span><span class="o">;</span>
+<span class="n">JavaRDD</span><span class="o">&lt;</span><span class="n">Double</span><span class="o">&gt;</span> <span class="n">evenNumbers</span> <span class="o">=</span> <span class="n">numbers</span><span class="o">.</span><span class="na">filter</span><span class="o">((</span><span class="n">x</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">x</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="o">);</span>
+</pre></div>
+</div>
+<p>
+</p></li><li><code>countByValue()</code>. An action that returns a
+Map/Dictionary that for each element e in the RDD X contains an entry
+(e,count(e)), where count(e) is the number of occurrences of e in
+X. For example, suppose that X contains integers, to save the number
+of occurrences of each distinct integer into a Map/Dictionary <code>countMap</code>, in Java you write <code> Map&lt;Integer,Long&gt; countMap  = X.countByValue()</code> while in Python you write <code>countMap  = X.countByValue(); </code>
+<p>
+</p></li><li><code>sortByKey(ascending)</code>.  A <b>transformation</b> that can be applied when the
+elements of X are key-value pairs (in Java X must be an JavaPairRDD). Given a boolean parameter
+ascending, it sorts the elements of X by key in increasing order (ascending = true) or in
+decreasing order (ascending = false). The parameter ascending is optional and, if missing, the
+default is true. Calling collect() on the resulting RDD will output an ordered 
+list of key-value pairs (see example after collect()). 
+<p>
+</p></li><li><code>collect()</code>. An <b>action</b> that
+brings all the data contained in X (which may be distributed across multiple executors) 
+into a list stored on the driver. <font color="CC0000">Warning:</font> this action needs enough memory 
+on the driver to 
+store all data in X, hence it must be used on when the RDD is sufficiently small, therwise
+an <code>OutOfMemoryError</code> will be thrown and the  program will crash.
+<p>
+For example:</p>
+<div class="highlight-Java"><div class="highlight"><pre><span></span><span class="n">JavaRDD</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">distributedWords</span><span class="o">;</span>
+<span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">localWords</span> <span class="o">=</span> <span class="n">distributedWords</span><span class="o">.</span><span class="na">collect</span><span class="o">();</span>
+<span class="c1">// localWords is a local copy of all the elements of the distributedWords RDD.</span>
+</pre></div>
+</div>
+<p>
+The following further example in Java shows how to print all elements of a 
+<code>JavaPairRDD&lt;Long,String&gt;</code> X, sorted by the key (of type Long):
+</p><pre>for(Tuple2&lt;Long,String&gt; tuple:X.sortByKey().collect()) {
+<span class="c1">  System.out.println("("+tuple._1()+","+tuple._2()+")"); </span>
+}
+</pre>
+<p>
+</p></li><li><code>take(num)</code>. An <b>action</b> that brings the first num elements of X
+into a list stored on the driver. When elements of X are key-value pairs, calling 
+<code>take(num)</code> after <code>sortByKey</code> return the first num pairs in the
+ordering. 
+<p>  
+</p></li><li><code>min(comp), max(comp)</code>. These are <b>actions</b> that return the minimum/maximum element in X,
+respectively. The usages in Java and Python are slightly different, and they are
+explaoned below.
+<p>
+
+<b>Java users.</b> The argument <code>comp</code> is an object of a class implementing 
+the <code>java.util.Comparator</code> interface. The interface defines a
+method <code>compare</code> which must adhere to the following
+contract.  Two arguments of the same type are given. If they are
+equals, the method should return 0, if the first is smaller a negative
+number should be returned, if the first is greater then a positive
+number should be returned. However, there is an issue in Spark’s Java
+API. Spark needs functions to be serializable, because it has to send
+them to executors, but <code>java.util.Comparator</code> is not seralizable, so
+anonymous functions passed to max or min are not serializable, even if
+they could be. This is a limitation of the Java compiler. Therefore,
+passing an anonymous function to max or min will cause your code to
+crash at runtime with a <code>TaskNotSerializableException</code>.
+Fortunately, there is a workaround: you can explicitly define a static class 
+implenting both Comparator and Serializable. Here is an example
+</p><p>
+<img alt="_images/MinMaxExample.png" src="./Big Data Computing_ Introdution to Programming in Spark_files/MinMaxExample.png" width="90%">
+</p><p>
+<b>Python users.</b> The argument <code>comp</code> is optional. If given,
+it is a function which, applied to each element of the RDD, 
+returns the key used to determine the min/max.
+</p></li></ul>
+
+<a name="Shared"><h4><b>Shared variables</b></h4></a>
+Sometimes, read-only global data must be used by RDD trasformations (e.g., 
+by the functions applied through methods such as map, flatMap or flatMapToPair). Let <code>Var</code> be a variable of type <code>T</code> defined in the main program and to be used in read-only fashion. 
+
+<p>
+RDD trasformations can simpy use <code>Var</code> in their code, as a
+global variable, but it is required that <code>Var</code> be assigned
+only once. Spark will create a copy of the variable for
+each task that needs the variable, and will ship the copy to the worker executing
+the task.
+
+</p><p>
+If the variable is a structure contaning several elements (e.g., an array or list), the above approach can be time and space consuming. In this case, it is more efficient to encapsulate <code>Var</code> as  
+<font color="CC0000"><em>broadcast variable</em></font>, say <code>sharedVar</code>, by invoking 
+</p><p>
+<code>Broadcast&lt;T&gt; sharedVar = sc.broadcast(Var)</code> (in Java)
+</p><p> 
+<code>sharedVar = sc.broadcast(Var)</code> (in Python) 
+</p><p>
+In this case, only one copy of the variable will be created in the
+memory of each worker and Spark will only ship a reference to the
+variable to the tasks that use it.  The value of this broadcast
+variable can be accessed by invoking <code>sharedVar.value()</code>
+(in Java) and <code>sharedVar.value</code> (in Python). Here is a Java
+example
+
+</p><pre><span class="c1"> int[] myArray = {7, 9, 12}; </span>
+<span class="c1"> Broadcast&lt;int[]&gt; sharedArray = sc.broadcast(myArray); </span>
+<span class="c1"> int i = sharedArray.value()[1]; // i=9</span>
+</pre>
+The same example in Python:
+<pre><span class="c1"> myList= [7, 9, 12] </span>
+<span class="c1"> sharedList = sc.broadcast(myList) </span>
+<span class="c1"> i = sharedList.value[1] # i=9</span>
+</pre>
+<p> 
+There are also special shared
+variables, called
+<font color="CC0000"><em>accumulators</em></font>, which can be modified but only through associative and commutative operators such as additions. For more details, see what the offical Spark documentation saysabout  
+<a href="https://spark.apache.org/docs/2.2.0/rdd-programming-guide.html#shared-variables">
+shared variables</a>.
+
+<a name="Profiling"></a></p><h4><a name="Profiling"><b>Profiling</b></a></h4>
+
+<b>Time measurements</b> 
+In Java, measuring time can be done thorugh
+the <code>System.currentTimeMillis()</code> method.  In Spark,
+however, the use of this method requires some care due to the fact
+that transformations are <em>lazy</em>, in the sense that they are
+executed only once an action (such as counting the elements or writing
+them to a file) requires the transformed data. If you do the
+following:
+<pre><span class="c1"><code>JavaRDD&lt;String&gt; docs = sc.textFile("filepath");</code>
+<span class="c1"><code>long start = System.currentTimeMillis();</code>
+<span class="c1"><code>// Code of which we want to measure the running time</code>
+<span class="c1"><code>long end = System.currentTimeMillis();</code>
+<span class="c1"><code>System.out.println("Elapsed time " + (end - start) + " ms");</code>
+</span></span></span></span></span></pre>
+then you would be measuring also the time to load the text file!
+Indeed, <code>sc.textFile</code> is not executed
+immediately, rather it is executed when an action requires
+it, <em>after</em> the start of the stopwatch.  Therefore, if you want
+to exclude the time to load the text file from your measurements, you
+need to <em>force</em> the loading to happen before the stopwatch is
+started.  In order to do so, you can run an action on the
+<code>docs</code> RDD, and the simplest one is <code>count()</code>.
+However, simply invoking <code>count</code> would not do: we have to explicitly tell Spark to cache the results in memory. In the above example, the
+first line should become as follows:
+<pre><span class="c1"><code>JavaRDD&lt;String&gt; docs = sc.textFile("filepath").cache();</code>
+<span class="c1"><code>numdocs = docs.count();</code>
+</span></span></pre>
+There are several alternatives for caching an RDD in memory.
+They are described 
+<a href="https://spark.apache.org/docs/latest/rdd-programming-guide.html#rdd-persistence">here</a>.
+<p>  
+<b>Web interface</b> 
+You can monitor the execution of Spark programs through a web interface.
+</p><ul>
+<li><b>In local mode:</b>
+The interface runs alongside your program, and
+exits when the program terminates.  In order to have time to consult
+it, you must suspend the execution of the program.  The simplest way
+is by inserting an input statement right before the end of
+your <code>main</code> method. For instance, in Java you could insert
+these two instructions at the end of the method (you can do a similar thing in Python):
+<pre><span class="c1">System.out.println("Press enter to finish"); </span>
+<span class="c1">System.in.read();</span>
+</pre>
+<p>
+Now, when your program reaches the input statement, open a browser and
+visit <a class="reference external" href="localhost:4040">localhost:4040</a>.  You will see the web
+interface of your running program
+</p><p>  
+</p></li><li>
+<b>On the cluster</b>
+To invoke the web interface to monitor jobs running on CloudVeneto, from your browser go to url:
+<pre><span>http://147.162.226.106:18080/ </span>
+</pre>
+<font color="CC0000">The access is allowed only from the unipd network.</font>
+<p>
+You will see the list of all applications (even those of other groups)
+already executed. (At the end of the list there is also a link to the
+list of incomplete applications.) There is a line for each application
+reporting enough information to allow you to indentify the application
+you want to monitor. Click on the link in the first column (App ID) to
+get the details of the application. You will get the same interface as
+the one that you used locally on your PC.
+</p></li></ul>
+Unfortunately, the web interfaces have no (or little) documentation.
+However, you are encouraged to explore them on your own.
+
+<h4><b>Official and additional documentation</b></h4>
+<a href="https://spark.apache.org/"> Apache Spark Site</a> 
+<p>
+<font color="CC0000"> For Java users. </font>
+Refer to the official
+<a href="https://spark.apache.org/docs/latest/rdd-programming-guide.html">
+RDD Programming guide</a>, to the
+<code>JavaRDD</code> and <code>JavaPairRDD</code> classes in the 
+<a href="https://spark.apache.org/docs/latest/api/java/index.html">Spark Java API</a>.
+</p></font><p><font size="4">
+<font color="CC0000"> For Python users. </font> 
+Refer to the official
+<a href="https://spark.apache.org/docs/latest/rdd-programming-guide.html">
+RDD Programming guide</a> and to the <code>RDD class</code> in the 
+<a href="https://spark.apache.org/docs/latest/api/python/reference/index.html">
+Spark Python API</a>. </font>
+</p><p>
+</p></td></tr></tbody></table>
+<hr size="3" noshade="" width="800" align="center" color="#004080">
+<table width="800">
+<tbody><tr>
+<td align="left" width="425">
+<font size="3">Last update: 11/05/2021 </font>
+</td><td align="right" width="265">
+</td></tr></tbody></table>
+</center>
+
+
+</body></html>
