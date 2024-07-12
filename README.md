@@ -20,7 +20,7 @@ Solve the *weighted variant of the k-center problem with outliers* by implementi
 
 Homework 2: [folder](https://github.com/stefanobinotto/Big-Data-Computing-course/tree/main/Homework%202)
 
-## HW 2 - kcenterOUT algorithm
+## HW 3 - 2-round Coreset-based MapReduce Algorithm for k-center with z Outliers
 Solve the *k-center problem with z outliers* by implementing the *2-round coreset-based MapReduce algorithm* described during the lecture. All the details are reported
 [here](https://github.com/stefanobinotto/Big-Data-Computing-course/blob/main/Homework%203/PresentationHW3.pdf). 
 
