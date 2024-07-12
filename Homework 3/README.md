@@ -10,3 +10,5 @@ where the weight assigned to a coreset point p is the number of points in the pa
 the sequential algorithm developed for Homework 2 (SeqWeightedOutliers) on this weighted coreset to extract the final solution.
 
 In the homework you will test the accuracy of the solution and the scalability of the various steps.
+
+The [.docx file](https://github.com/stefanobinotto/Big-Data-Computing-course/blob/main/Homework%203/G064HW3table.docx) describes the results and comparisons with different settings and configurations.
